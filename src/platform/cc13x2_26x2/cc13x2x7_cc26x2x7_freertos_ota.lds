@@ -29,6 +29,7 @@ MEMORY
     /* FLASH (RX)      : ORIGIN = 0x00000000, LENGTH = 0x000affa8 */
     /* FLASH_CCFG (RX) : ORIGIN = 0x000affa8, LENGTH = 0x00000058 */
     FLASH (RX)      : ORIGIN = 0x00000000, LENGTH = 0x000ae000
+    FLASH_FACTORY_DATA (RX)  : ORIGIN = 0x000af960, LENGTH = 0x00000648
     /* BLE ROM reserves RAM at the beginning of the ram image */
     /* SRAM (RWX)      : ORIGIN = 0x20000000, LENGTH = 0x00024000 */
     SRAM (RWX)      : ORIGIN = 0x20000fdf, LENGTH = 0x00023021
@@ -43,6 +44,7 @@ MEMORY
 }
 
 REGION_ALIAS("REGION_TEXT", FLASH);
+REGION_ALIAS("REGION_FACTORY_DATA", FLASH_FACTORY_DATA); 
 REGION_ALIAS("REGION_BSS", SRAM);
 REGION_ALIAS("REGION_DATA", SRAM);
 REGION_ALIAS("REGION_STACK", SRAM);
@@ -74,6 +76,19 @@ SECTIONS {
     .vtable (_vtable_base_address) (NOLOAD) : {
         KEEP (*(.ramVecs))
     } > REGION_DATA
+
+    /* Define base address for the DAC arrays and struct */
+    PROVIDE (_factory_data_base_address =
+        DEFINED(_factory_data_base_address) ? _factory_data_base_address : 0xAF960);
+     
+    .factory_data(_factory_data_base_address) : AT (_factory_data_base_address) {
+        KEEP (*(.factory_data_struct))
+        KEEP (*(.dac_priv_key))
+        KEEP (*(.dac_pub_key))
+        KEEP (*(.dac_cert))
+        KEEP (*(.pai_cert))
+    } > REGION_FACTORY_DATA 
+     
 
     /*
      * UDMACC26XX_CONFIG_BASE below must match UDMACC26XX_CONFIG_BASE defined
