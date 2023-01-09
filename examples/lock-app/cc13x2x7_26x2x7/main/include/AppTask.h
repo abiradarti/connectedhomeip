@@ -67,6 +67,15 @@ private:
     Function_t mFunction;
     bool mFunctionTimerActive;
 
+
+    /**
+     * @brief Update Cluster State
+     *
+     * @param context current context
+     */
+    static void UpdateClusterState(intptr_t context);
+
+
     static AppTask sAppTask;
 };
 

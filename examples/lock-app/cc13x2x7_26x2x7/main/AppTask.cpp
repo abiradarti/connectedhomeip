@@ -26,9 +26,21 @@
 
 #include <credentials/DeviceAttestationCredsProvider.h>
 #include <credentials/examples/DeviceAttestationCredsExample.h>
+#include <examples/platform/cc13x2_26x2/CC13X2_26X2DeviceAttestationCreds.h>
 
 #include <DeviceInfoProviderImpl.h>
 #include <platform/CHIPDeviceLayer.h>
+
+
+#include <app-common/zap-generated/cluster-enums.h>
+
+
+
+#include <app/clusters/door-lock-server/door-lock-server.h>
+#include <app/clusters/identify-server/identify-server.h>
+#include <app/server/OnboardingCodesUtil.h>
+#include <app/server/Server.h>
+#include <app/util/attribute-storage.h>
 
 #if CHIP_DEVICE_CONFIG_ENABLE_OTA_REQUESTOR
 #include <app/clusters/ota-requestor/BDXDownloader.h>
@@ -52,6 +64,10 @@
 #define APP_TASK_STACK_SIZE (4096)
 #define APP_TASK_PRIORITY 4
 #define APP_EVENT_QUEUE_SIZE 10
+
+using chip::app::Clusters::DoorLock::DlLockState;
+using chip::app::Clusters::DoorLock::DlOperationError;
+using chip::app::Clusters::DoorLock::DlOperationSource;
 
 using namespace ::chip;
 using namespace ::chip::Credentials;
@@ -96,7 +112,7 @@ int AppTask::StartAppTask()
     if (sAppEventQueue == NULL)
     {
         PLAT_LOG("Failed to allocate app event queue");
-        while (true)
+        while (1)
             ;
     }
 
@@ -105,7 +121,7 @@ int AppTask::StartAppTask()
         pdPASS)
     {
         PLAT_LOG("Failed to create app task");
-        while (true)
+        while (1)
             ;
     }
     return ret;
@@ -125,7 +141,7 @@ int AppTask::Init()
     if (ret != CHIP_NO_ERROR)
     {
         PLAT_LOG("PlatformMgr().InitChipStack() failed");
-        while (true)
+        while (1)
             ;
     }
 
@@ -133,18 +149,18 @@ int AppTask::Init()
     if (ret != CHIP_NO_ERROR)
     {
         PLAT_LOG("ThreadStackMgr().InitThreadStack() failed");
-        while (true)
+        while (1)
             ;
     }
 #if CHIP_DEVICE_CONFIG_THREAD_FTD
     ret = ConnectivityMgr().SetThreadDeviceType(ConnectivityManager::kThreadDeviceType_Router);
 #else
-    ret = ConnectivityMgr().SetThreadDeviceType(ConnectivityManager::kThreadDeviceType_MinimalEndDevice);
+    ret = ConnectivityMgr().SetThreadDeviceType(ConnectivityManager::kThreadDeviceType_SleepyEndDevice);
 #endif
     if (ret != CHIP_NO_ERROR)
     {
         PLAT_LOG("ConnectivityMgr().SetThreadDeviceType() failed");
-        while (true)
+        while (1)
             ;
     }
 
@@ -152,7 +168,7 @@ int AppTask::Init()
     if (ret != CHIP_NO_ERROR)
     {
         PLAT_LOG("PlatformMgr().StartEventLoopTask() failed");
-        while (true)
+        while (1)
             ;
     }
 
@@ -160,7 +176,7 @@ int AppTask::Init()
     if (ret != CHIP_NO_ERROR)
     {
         PLAT_LOG("ThreadStackMgr().StartThreadTask() failed");
-        while (true)
+        while (1)
             ;
     }
 
@@ -176,7 +192,11 @@ int AppTask::Init()
     chip::Server::GetInstance().Init(initParams);
 
     // Initialize device attestation config
+#ifdef CC13X2_26X2_ATTESTATION_CREDENTIALS
+    SetDeviceAttestationCredentialsProvider(CC13X2_26X2::GetCC13X2_26X2DacProvider());
+#else
     SetDeviceAttestationCredentialsProvider(Examples::GetExampleDACProvider());
+#endif
 
     // Initialize LEDs
     PLAT_LOG("Initialize LEDs");
@@ -229,7 +249,7 @@ void AppTask::AppTaskMain(void * pvParameter)
 
     sAppTask.Init();
 
-    while (true)
+    while (1)
     {
         /* Task pend until we have stuff to do */
         if (xQueueReceive(sAppEventQueue, &event, portMAX_DELAY) == pdTRUE)
@@ -329,6 +349,10 @@ void AppTask::ActionCompleted(BoltLockManager::Action_t aAction)
         LED_stopBlinking(sAppRedHandle);
         LED_setOff(sAppRedHandle);
     }
+
+
+    chip::DeviceLayer::PlatformMgr().ScheduleWork(UpdateClusterState, reinterpret_cast<intptr_t>(nullptr));
+   
 }
 
 void AppTask::DispatchEvent(AppEvent * aEvent)
@@ -355,6 +379,10 @@ void AppTask::DispatchEvent(AppEvent * aEvent)
             if (BoltLockMgr().IsUnlocked())
             {
                 BoltLockMgr().InitiateAction(0, BoltLockManager::LOCK_ACTION);
+            }
+            else 
+            {
+                BoltLockMgr().InitiateAction(0, BoltLockManager::UNLOCK_ACTION);
             }
         }
         else if (AppEvent::kAppEventButtonType_LongClicked == aEvent->ButtonEvent.Type)
@@ -390,5 +418,24 @@ void AppTask::DispatchEvent(AppEvent * aEvent)
     case AppEvent::kEventType_None:
     default:
         break;
+    }
+}
+
+
+
+void AppTask::UpdateClusterState(intptr_t context)
+{
+    bool unlocked        = BoltLockMgr().IsUnlocked();
+    DlLockState newState = unlocked ? DlLockState::kUnlocked : DlLockState::kLocked;
+
+    DlOperationSource source = DlOperationSource::kUnspecified;
+
+    // write the new lock value
+    EmberAfStatus status =
+        DoorLockServer::Instance().SetLockState(1, newState, source) ? EMBER_ZCL_STATUS_SUCCESS : EMBER_ZCL_STATUS_FAILURE;
+
+    if (status != EMBER_ZCL_STATUS_SUCCESS)
+    {
+        // Error updating the lock status
     }
 }
