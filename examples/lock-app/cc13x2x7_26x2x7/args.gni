@@ -43,6 +43,9 @@ chip_stack_lock_tracking = "none"
 
 chip_openthread_ftd = false
 
+# Enable Sleepy end device
+enable_sleepy_device = true
+
 matter_device_vid = "0xFFF1"
 matter_device_pid = "0x8006"
 matter_software_ver = "0x0001"
