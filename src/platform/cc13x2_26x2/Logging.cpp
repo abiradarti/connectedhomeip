@@ -54,8 +54,8 @@ extern "C" void cc13x2_26x2VLog(const char * msg, va_list v)
 #else
 
 /* log functins defined somewhere else */
-extern "C" int cc13x2_26x2LogInit(void);
-extern "C" void cc13x2_26x2VLog(const char * msg, va_list v);
+//extern "C" int cc13x2_26x2LogInit(void);
+//extern "C" void cc13x2_26x2VLog(const char * msg, va_list v);
 
 #endif // MATTER_CC13X2_26X2_PLATFORM_LOG_ENABLED
 
@@ -81,7 +81,7 @@ void LogV(const char * module, uint8_t category, const char * msg, va_list v)
     (void) module;
     (void) category;
 
-    cc13x2_26x2VLog(msg, v);
+ //   cc13x2_26x2VLog(msg, v);
 
     chip::DeviceLayer::OnLogOutput();
 }
@@ -100,7 +100,7 @@ extern "C" void LwIPLog(const char * msg, ...)
 
     va_start(v, msg);
 
-    cc13x2_26x2VLog(msg, v);
+//    cc13x2_26x2VLog(msg, v);
 
     chip::DeviceLayer::OnLogOutput();
     va_end(v);
@@ -116,7 +116,7 @@ extern "C" void cc13x2_26x2Log(const char * msg, ...)
 
     va_start(v, msg);
 
-    cc13x2_26x2VLog(msg, v);
+ //   cc13x2_26x2VLog(msg, v);
 
     chip::DeviceLayer::OnLogOutput();
     va_end(v);
@@ -132,7 +132,7 @@ extern "C" void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion, const ch
 
     va_start(v, aFormat);
 
-    cc13x2_26x2VLog(aFormat, v);
+ //   cc13x2_26x2VLog(aFormat, v);
 
     chip::DeviceLayer::OnLogOutput();
     va_end(v);
