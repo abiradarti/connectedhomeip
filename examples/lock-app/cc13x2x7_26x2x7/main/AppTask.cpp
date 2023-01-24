@@ -198,33 +198,33 @@ int AppTask::Init()
     SetDeviceAttestationCredentialsProvider(Examples::GetExampleDACProvider());
 #endif
 
-    // Initialize LEDs
-    PLAT_LOG("Initialize LEDs");
-    LED_init();
+    // // Initialize LEDs
+    // PLAT_LOG("Initialize LEDs");
+    // LED_init();
 
-    LED_Params_init(&ledParams); // default PWM LED
-    sAppRedHandle = LED_open(CONFIG_LED_RED, &ledParams);
-    LED_setOff(sAppRedHandle);
+    // LED_Params_init(&ledParams); // default PWM LED
+    // sAppRedHandle = LED_open(CONFIG_LED_RED, &ledParams);
+    // LED_setOff(sAppRedHandle);
 
-    LED_Params_init(&ledParams); // default PWM LED
-    sAppGreenHandle = LED_open(CONFIG_LED_GREEN, &ledParams);
-    LED_setOff(sAppGreenHandle);
+    // LED_Params_init(&ledParams); // default PWM LED
+    // sAppGreenHandle = LED_open(CONFIG_LED_GREEN, &ledParams);
+    // LED_setOff(sAppGreenHandle);
 
-    // Initialize buttons
-    PLAT_LOG("Initialize buttons");
-    Button_init();
+    // // Initialize buttons
+    // PLAT_LOG("Initialize buttons");
+    // Button_init();
 
-    Button_Params_init(&buttonParams);
-    buttonParams.buttonEventMask   = Button_EV_CLICKED | Button_EV_LONGCLICKED;
-    buttonParams.longPressDuration = 1000U; // ms
-    sAppLeftHandle                 = Button_open(CONFIG_BTN_LEFT, &buttonParams);
-    Button_setCallback(sAppLeftHandle, ButtonLeftEventHandler);
+    // Button_Params_init(&buttonParams);
+    // buttonParams.buttonEventMask   = Button_EV_CLICKED | Button_EV_LONGCLICKED;
+    // buttonParams.longPressDuration = 1000U; // ms
+    // sAppLeftHandle                 = Button_open(CONFIG_BTN_LEFT, &buttonParams);
+    // Button_setCallback(sAppLeftHandle, ButtonLeftEventHandler);
 
-    Button_Params_init(&buttonParams);
-    buttonParams.buttonEventMask   = Button_EV_CLICKED | Button_EV_LONGCLICKED;
-    buttonParams.longPressDuration = 1000U; // ms
-    sAppRightHandle                = Button_open(CONFIG_BTN_RIGHT, &buttonParams);
-    Button_setCallback(sAppRightHandle, ButtonRightEventHandler);
+    // Button_Params_init(&buttonParams);
+    // buttonParams.buttonEventMask   = Button_EV_CLICKED | Button_EV_LONGCLICKED;
+    // buttonParams.longPressDuration = 1000U; // ms
+    // sAppRightHandle                = Button_open(CONFIG_BTN_RIGHT, &buttonParams);
+    // Button_setCallback(sAppRightHandle, ButtonRightEventHandler);
 
     // Initialize BoltLock module
     PLAT_LOG("Initialize BoltLock");
@@ -239,6 +239,28 @@ int AppTask::Init()
 #endif
     // QR code will be used with CHIP Tool
     PrintOnboardingCodes(RendezvousInformationFlags(RendezvousInformationFlag::kBLE));
+
+    // Enable BLE advertisements
+    if (!ConnectivityMgr().IsBLEAdvertisingEnabled())
+    {
+        if (Server::GetInstance().GetCommissioningWindowManager().OpenBasicCommissioningWindow() == CHIP_NO_ERROR)
+        {
+            PLAT_LOG("Enabled BLE Advertisements");
+        }
+        elseif (!ConnectivityMgr().IsBLEAdvertisingEnabled())
+    {
+        if (Server::GetInstance().GetCommissioningWindowManager().OpenBasicCommissioningWindow() == CHIP_NO_ERROR)
+        {
+            PLAT_LOG("Enabled BLE Advertisements");
+        }
+        else
+        {
+            PLAT_LOG("OpenBasicCommissioningWindow() failed");
+        }
+        {
+            PLAT_LOG("OpenBasicCommissioningWindow() failed");
+        }
+    }
 
     return 0;
 }
@@ -267,45 +289,45 @@ void AppTask::PostEvent(const AppEvent * aEvent)
     }
 }
 
-void AppTask::ButtonLeftEventHandler(Button_Handle handle, Button_EventMask events)
-{
-    AppEvent event;
-    event.Type = AppEvent::kEventType_ButtonLeft;
+// void AppTask::ButtonLeftEventHandler(Button_Handle handle, Button_EventMask events)
+// {
+//     AppEvent event;
+//     event.Type = AppEvent::kEventType_ButtonLeft;
 
-    if (events & Button_EV_CLICKED)
-    {
-        event.ButtonEvent.Type = AppEvent::kAppEventButtonType_Clicked;
-    }
-    else if (events & Button_EV_LONGCLICKED)
-    {
-        event.ButtonEvent.Type = AppEvent::kAppEventButtonType_LongClicked;
-    }
-    // button callbacks are in ISR context
-    if (xQueueSendFromISR(sAppEventQueue, &event, NULL) != pdPASS)
-    {
-        /* Failed to post the message */
-    }
-}
+//     if (events & Button_EV_CLICKED)
+//     {
+//         event.ButtonEvent.Type = AppEvent::kAppEventButtonType_Clicked;
+//     }
+//     else if (events & Button_EV_LONGCLICKED)
+//     {
+//         event.ButtonEvent.Type = AppEvent::kAppEventButtonType_LongClicked;
+//     }
+//     // button callbacks are in ISR context
+//     if (xQueueSendFromISR(sAppEventQueue, &event, NULL) != pdPASS)
+//     {
+//         /* Failed to post the message */
+//     }
+// }
 
-void AppTask::ButtonRightEventHandler(Button_Handle handle, Button_EventMask events)
-{
-    AppEvent event;
-    event.Type = AppEvent::kEventType_ButtonRight;
+// void AppTask::ButtonRightEventHandler(Button_Handle handle, Button_EventMask events)
+// {
+//     AppEvent event;
+//     event.Type = AppEvent::kEventType_ButtonRight;
 
-    if (events & Button_EV_CLICKED)
-    {
-        event.ButtonEvent.Type = AppEvent::kAppEventButtonType_Clicked;
-    }
-    else if (events & Button_EV_LONGCLICKED)
-    {
-        event.ButtonEvent.Type = AppEvent::kAppEventButtonType_LongClicked;
-    }
-    // button callbacks are in ISR context
-    if (xQueueSendFromISR(sAppEventQueue, &event, NULL) != pdPASS)
-    {
-        /* Failed to post the message */
-    }
-}
+//     if (events & Button_EV_CLICKED)
+//     {
+//         event.ButtonEvent.Type = AppEvent::kAppEventButtonType_Clicked;
+//     }
+//     else if (events & Button_EV_LONGCLICKED)
+//     {
+//         event.ButtonEvent.Type = AppEvent::kAppEventButtonType_LongClicked;
+//     }
+//     // button callbacks are in ISR context
+//     if (xQueueSendFromISR(sAppEventQueue, &event, NULL) != pdPASS)
+//     {
+//         /* Failed to post the message */
+//     }
+// }
 
 void AppTask::ActionInitiated(BoltLockManager::Action_t aAction, int32_t aActor)
 {
